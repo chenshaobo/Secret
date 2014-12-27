@@ -11,8 +11,8 @@
 -define(MNESIA_DEFAULT_OPTION,[]).%{disc_copies,[node()]}]).
 
 -define(MNESIA_TABLE,[
-    {?DB_ACCOUNT_P,r_account,record_info(fields,r_account)},
-    {?DB_CONTENT_P,r_content,record_info(fields,r_content)}
+    {?DB_ACCOUNT_P,r_account,record_info(fields,r_account),[]},
+    {?DB_CONTENT_P,r_content,record_info(fields,r_content),[{type,ordered_set}]}
 ]).
 
 -define(DB_ACCOUNT_P,db_account_p).

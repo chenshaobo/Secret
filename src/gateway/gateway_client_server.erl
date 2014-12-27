@@ -24,7 +24,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(gateway, {account,pid,pname,gpid,gpname,ip,send_sock,listen_scok,is_login=false}).
+-record(gateway, {account,pid,pname,gpid,gpname,ip,send_sock,listen_scok,state=disconnect}).
 
 %%%===================================================================
 %%% API
@@ -75,14 +75,16 @@ handle_info(timeout,State)->
     {ok,SendSock}=gen_tcp:accept(State#gateway.listen_scok),
     gateway_sup:start_child(),
     erlang:send(whereis(manager_server),{connect,self()}),
-    {noreply,State#gateway{send_sock = SendSock}};
+    ?PRINT("Connect :~w",[SendSock]),
+    {noreply,State#gateway{send_sock = SendSock,state = connect}};
 handle_info({login,Account,AccountPid},State)->
     true=erlang:unregister(State#gateway.gpname),
     erlang:register(list_to_atom(Account ++ "_GPID"),self()),
-    {noreply,State#gateway{account = Account,pid = AccountPid,is_login = true}};
+    {noreply,State#gateway{account = Account,pid = AccountPid,state = login}};
 handle_info({tcp,_Socket,RawData},State)->
-    do_handle_data(RawData,State),
-    {noreply,State};
+    ?PRINT("Receive :~p",[RawData]),
+    NewState=do_handle_data(RawData,State),
+    {noreply,NewState};
 handle_info({tcp_closed,_Socket},State)->
     erlang:send(whereis(manager_server),{disconnect,self()}),
     Pid=State#gateway.pid,
@@ -91,6 +93,7 @@ handle_info({tcp_closed,_Socket},State)->
     erlang:exit(self(),disconnect),
     {noreply,State};
 handle_info(_Info, State) ->
+    ?PRINT("Receice:~p",[_Info]),
     {noreply, State}.
 
 
@@ -104,11 +107,27 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-do_handle_data(RawData,State=#gateway{is_login = false})->
+do_handle_data(RawData,State=#gateway{state = connect})->
+    HeaderList = binary:split(RawData, <<"\r\n">>, [global]),
+    HeaderList1 = [list_to_tuple(binary:split(HeaderList, <<": ">>)) || Header <-HeaderList,Header /= nomatch],
+    {_, SecWebSocketKey} = lists:keyfind(<<"Sec-WebSocket-Key">>, 1, HeaderList1),
+    Sha1 = crypto:sha([SecWebSocketKey, <<"258EAFA5-E914-47DA-95CA-C5AB0DC85B11">>]),
+    Base64 = base64:encode(Sha1),
+    Handshake = [
+        <<"HTTP/1.1 101 Switching Protocols\r\n">>,
+        <<"Upgrade: websocket\r\n">>,
+        <<"Connection: Upgrade\r\n">>,
+        <<"Sec-WebSocket-Accept: ">>, Base64, <<"\r\n">>,
+        <<"\r\n">>
+    ],
+    ?PRINT("Send：~p",[Handshake]),
+    ok=gen_tcp:send(State#gateway.send_sock, Handshake),
+    State#gateway{state=handshake};
+do_handle_data(RawData,State=#gateway{state = handshake})->
     Record=erlang:binary_to_term(RawData),
     %?PRINT("Receice:~w",[Record]),
     router:router(erlang:element(1,Record),Record,State#gateway.gpid);
-do_handle_data(RawData,State=#gateway{is_login = true})->
+do_handle_data(RawData,State=#gateway{state = login})->
     Record=erlang:binary_to_term(RawData),
     erlnag:send(State#gateway.pid,{router,Record}),
     ok.

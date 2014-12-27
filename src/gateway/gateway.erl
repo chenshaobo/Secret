@@ -13,7 +13,7 @@
 
 -include("gateway.hrl").
 %% Application callbacks
--export([start/2,
+-export([start/2,start/0,
     stop/1]).
 
 %%%===================================================================
@@ -31,6 +31,19 @@
 %%
 %% @end
 %%--------------------------------------------------------------------
+start()->
+        Port=case application:get_env(tcp_listen)of
+             {ok,P}->P;
+             _ ->?DEFAULT_PORT
+         end,
+    {ok,LSock}=gen_tcp:listen(Port,?LISTEN_OPTION),
+    case gateway_sup:start_link(LSock) of
+        {ok, Pid} ->
+            gateway_sup:start_child(),
+            {ok, Pid};
+        Error ->
+            Error
+    end.
 start(_StartType, _StartArgs) ->
     Port=case application:get_env(tcp_listen)of
              {ok,P}->P;

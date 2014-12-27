@@ -20,11 +20,11 @@ init()->
     [ begin
           case mnesia:create_table(TableName,[{record_name,RecordName},
                                                 {disc_copies,[node()]},
-                                                {attributes,RecordInfo},{type,ordered_set}]) of
+                                                {attributes,RecordInfo},{type,ordered_set}]++ExtraOpt) of
               {atomic, ok} ->
                   ok;
               {aborted,R} ->
                   ?PRINT("create abort:~w",[R])
           end
-      end||{TableName,RecordName,RecordInfo}<-?MNESIA_TABLE].
+      end||{TableName,RecordName,RecordInfo,ExtraOpt}<-?MNESIA_TABLE].
 

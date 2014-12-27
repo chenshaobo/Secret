@@ -12,7 +12,7 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2,
+-export([start/2,start/0,
     stop/1]).
 
 %%%===================================================================
@@ -30,6 +30,13 @@
 %%
 %% @end
 %%--------------------------------------------------------------------
+start()->
+    case account_sup:start_link() of
+        {ok, Pid} ->
+            {ok, Pid};
+        Error ->
+            Error
+    end.
 -spec(start(StartType :: normal | {takeover, node()} | {failover, node()},
     StartArgs :: term()) ->
     {ok, pid()} |
