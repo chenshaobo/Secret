@@ -8,10 +8,10 @@
 %%%-------------------------------------------------------------------
 -author("Chenshaobo <chenshaobo65@gmail.com>").
 
--define(PRINT(X),io:format(X++"~n")).
--define(PRINT(X,Y),io:format(X ++ "~n",Y)).
--define(ERROR(X),io:format("Error:"++X ++ "~n")).
--define(ERROR(X,Y),io:format("Error:"++X ++ "~n",Y)).
+-define(PRINT(X),io:format(io_lib:format("Print:~w:~w>",[?MODULE,?LINE])++X++"~n")).
+-define(PRINT(X,Y),io:format(io_lib:format("Print:~w:~w>",[?MODULE,?LINE])++ X ++ "~n",Y)).
+-define(ERROR(X),io:format( io_lib:format("Error:~w:~w>",[?MODULE,?LINE])++X ++ "~n")).
+-define(ERROR(X,Y),io:format( io_lib:format("Error:~w:~w>",[?MODULE,?LINE])++ X ++"~n",Y)).
 
 -define(SECOND,begin {A,B,_C}=erlang:now(),A * 1000000 + B end).
 

@@ -34,4 +34,5 @@ router(2,Data,GPID)->
             ?ERROR("Account not found:~w",[Account])
     end;
 router(_P,Data,_GPName)->
+    ?ERROR("Receive Unknow  Pro:~w",[Data]),
     Data.

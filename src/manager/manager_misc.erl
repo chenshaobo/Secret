@@ -15,7 +15,7 @@
 -export([start/0,i/0]).
 
 start()->
-    db_misc:init(),
+   % db_misc:init(),
     application:start(gateway),
     application:start(account),
     application:start(content),

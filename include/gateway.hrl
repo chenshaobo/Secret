@@ -10,4 +10,4 @@
 
 -define(DEFAULT_PORT,8888).
 
--define(LISTEN_OPTION,[binary,{packet,4},{active,true}]).
+-define(LISTEN_OPTION,[binary,{packet,0},{active,true}]).
